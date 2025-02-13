@@ -12,7 +12,7 @@
               "leftSideTitle": { "type": "string" },
               "rightSideTitle": { "type": "string" },
               "filePattenGlobTemplate": { 
-                  "type": "string",
+                  "type": "string"
                 
               }
           }
@@ -26,8 +26,8 @@
               "properties": {
                   "datasetName": { "type": "string" },
                   "inputFile": { 
-                      "type": "string",
-                      "pattern": ".*\\.csv|.*\\.csv.gz$"
+                      "type": "string"
+                  
                   }
               }
           }
@@ -68,8 +68,8 @@
           "properties": {
               "title": { "type": "string" },
               "inputFile": { 
-                  "type": "string",
-                  "pattern": ".*\\.csv|.*\\.csv.gz$"
+                  "type": "string"
+                 
                   
               },
               "transform": {

@@ -1,5 +1,5 @@
 
-from config import *
+from .config import *
 
 import logging
 import os
@@ -10,7 +10,41 @@ import glob
 
 class DeltaLens:
     """
-    
+    A class for comparing datasets using DuckDB as the comparison engine.
+    The DeltaLens class facilitates data comparison between two datasets for multiple entities,
+    managing the database connections and comparison workflow. It supports both in-memory and
+    persistent database operations.
+    Parameters
+    ----------
+    runName : str
+        A unique identifier for this comparison run
+    entityConfig : Config
+        Configuration object containing entity definitions and comparison settings
+    persistent : bool, optional
+        If True, creates a persistent DuckDB database file, otherwise uses in-memory database
+        (default is False)
+    persist_path : str, optional
+        Directory path where the persistent database file will be stored
+        (default is current directory '.')
+    Attributes
+    ----------
+    config : Config
+        Stores the entity configuration
+    runName : str
+        Name of the current comparison run
+    con : duckdb.DuckDBPyConnection
+        Connection to the DuckDB database
+    duck_db_fileName : str
+        Path to the DuckDB database file or memory identifier
+    Methods
+    -------
+    execute(continue_on_error=True)
+        Executes the comparison process for all configured entities
+    Notes
+    -----
+    - The class creates a results table named 'entity_compare_results' to track comparison outcomes
+    - The execute() method can only be called once per instance
+   
     """
     def __init__(self, runName: str, entityConfig: Config, persistent = False, persist_path = '.'):
         self.config = entityConfig
@@ -28,7 +62,7 @@ class DeltaLens:
         self.logger.info(f"Connected to DuckDB database @: {self.duck_db_fileName}")
       
 
-    def populateDefaults(self):
+    def __populateDefaults(self):
         if self.config.defaults and self.config.defaults.leftSideTitle:
             for entity in self.config.entities:
                 entity.leftSide.title = self.config.defaults.leftSideTitle
@@ -66,12 +100,12 @@ class DeltaLens:
     def execute(self, continue_on_error = True):      
         if hasattr(self, '_has_executed'):
             raise ValueError("Execute method has already been called")
-        self.populateDefaults()
+        self.__populateDefaults()
         Config.Validate(self.config)
         self.__createResultsTable()
         self.__loadExternalDatasets()
         for entity in self.config.entities:
-            self.logger.info(f"Processing entity: {entity.entityName}")
+            self.logger.info(f"Processing entity: [{entity.entityName}]")
             try:
                 equityComparer = EntityComparer(self.con, entity)
                 equityComparer.runcompare()
@@ -88,10 +122,10 @@ class DeltaLens:
                     FROM {}_compare""".format(entity.entityName), 
                     [entity.entityName]
                 )
-                self.logger.info(f"Completed processing entity: {entity.entityName}")
+                self.logger.info(f"Completed processing entity: [{entity.entityName}]")
             except Exception as e:
                 error_msg = str(e)
-                self.logger.error(f"Error processing entity {entity.entityName}: {error_msg}")
+                self.logger.error(f"Error processing entity [{entity.entityName}]: {e}")
                 # Log failure
                 self.con.execute(
                     """INSERT INTO entity_compare_results 
@@ -111,8 +145,55 @@ class DeltaLens:
 
 class EntityComparer:
     """
-    
-    """
+    A class for comparing two datasets (left and right side) with the same structure and primary keys.
+    This class handles data comparison between two CSV files, applying optional transformations,
+    and generating detailed comparison results including field-level matching statistics.
+    Parameters
+    ----------
+    con : duckdb.DuckDBPyConnection
+        A DuckDB connection object for database operations
+    entity : Entity
+        An Entity object containing comparison configuration details including:
+        - entityName: Name of the entity being compared
+        - leftSide: Configuration for left dataset (input file, transformations)
+        - rightSide: Configuration for right dataset (input file, transformations)
+        - primaryKeys: List of columns that uniquely identify records
+        - excludeColumns: List of columns to exclude from comparison
+    Attributes
+    ----------
+    logger : Logger
+        Logger instance for the class
+    con : duckdb.DuckDBPyConnection
+        DuckDB connection object
+    entity : Entity
+        Entity configuration object
+    leftSideInputTable : str
+        Name of the table containing left side data
+    rightSideInputTable : str
+        Name of the table containing right side data
+    leftSideInputTableTransformed : str, optional
+        Name of the transformed left side table (if transformation is applied)
+    rightSideInputTableTransformed : str, optional
+        Name of the transformed right side table (if transformation is applied)
+    Methods
+    -------
+    runcompare()
+        Executes the comparison process and generates results:
+        - Loads data from CSV files into DuckDB tables
+        - Applies transformations if specified
+        - Validates data types and primary keys
+        - Performs full outer join comparison
+        - Creates comparison results table and summary statistics
+    Raises
+    ------
+    FileNotFoundError
+        If input CSV files are not found
+    ValueError
+        If primary keys are missing in tables
+        If column data types don't match between tables
+        If required columns are missing in either table
+        """
+  
     def __init__(self, con:duckdb.DuckDBPyConnection, entity: Entity):
         self.logger = logging.getLogger(self.__class__.__name__ + "[" + entity.entityName + "]")
         self.con = con
@@ -158,15 +239,13 @@ class EntityComparer:
   
     def runcompare(self):
        
-        self.__create_left_side_table()
-        
+        self.__create_left_side_table()     
         self.__create_right_side_table()
 
         if self.entity.leftSide.transform:
             self.__applyLeftTransform()
         if self.entity.rightSide.transform:
             self.__applyRightTransform()
-
 
         # get column names from both tables
         left_columns, right_columns = self.__extract_columns()
@@ -192,7 +271,9 @@ class EntityComparer:
         full_outer_join = f"FROM {self.leftSideInputTable} FULL OUTER JOIN {self.rightSideInputTable} ON {join_condition}"
 
         # Get all non-primary key columns for comparison
-        comparison_columns = set(left_columns + right_columns) - set(self.entity.primaryKeys) - set(self.entity.excludeColumns)
+        comparison_columns = set(left_columns + right_columns) - set(self.entity.primaryKeys)
+        if self.entity.excludeColumns is not None:
+             comparison_columns = comparison_columns - set(self.entity.excludeColumns)
 
         # Build column comparisons for the SELECT clause
         column_expressions = []
@@ -214,15 +295,15 @@ class EntityComparer:
                 match_columns.append(f"{col}_match")
             else:
                 raise ValueError(f"Column '{col}' not found in both tables: left table= {self.leftSideInputTable}.found={in_left}, right table={self.rightSideInputTable}.found={in_right}")
+        if self.entity.excludeColumns is not None:
+            for col in self.entity.excludeColumns:
+                in_left = col in left_columns
+                in_right = col in right_columns
 
-        for col in self.entity.excludeColumns:
-            in_left = col in left_columns
-            in_right = col in right_columns
-
-            if in_left:
-                column_expressions.append(f"{self.leftSideInputTable}.{col} as {col}_left")
-            if in_right:
-                column_expressions.append(f"{self.rightSideInputTable}.{col} as {col}_right")
+                if in_left:
+                    column_expressions.append(f"{self.leftSideInputTable}.{col} as {col}_left")
+                if in_right:
+                    column_expressions.append(f"{self.rightSideInputTable}.{col} as {col}_right")
 
 
         exists_left_expression = [f"{self.leftSideInputTable}.{col}  IS NOT NULL " for col in self.entity.primaryKeys]
@@ -260,18 +341,8 @@ class EntityComparer:
 
         self.con.execute(f"ALTER TABLE  {self.entity.entityName}_compare ADD PRIMARY KEY ({','.join(self.entity.primaryKeys)})")
 
-        result_statement = f"SELECT * FROM {self.entity.entityName}_compare"
-
-        comparison_result = self.con.execute(result_statement).fetchdf()
-
-        # Generate summary statistics for each field using SQL
-       
         self.__create_field_summary_table(match_columns)
 
-        summary_results = self.con.execute(f"select * from {self.entity.entityName}_compare_field_summary").fetchdf()
-        
-        self.logger.info(summary_results)  
-        self.logger.info(comparison_result)
 
     def __create_right_side_table(self):
         self.logger.info(f"Loading data into right side input table: {self.rightSideInputTable} from {self.entity.rightSide.inputFile}")

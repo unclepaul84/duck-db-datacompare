@@ -2,8 +2,8 @@ import pytest
 import os
 import tempfile
 import csv
-from deltaLens import DeltaLens, EntityComparer
-from config import Config, Entity, Side, Transform, Defaults,ReferenceDataset
+from delta_lens.deltaLens import DeltaLens, EntityComparer
+from delta_lens.config import Config, Entity, Side, Transform, Defaults,ReferenceDataset
 import duckdb
 import logging
 
@@ -104,6 +104,17 @@ def test_runcompare_with_sample_data(delta_lens, sample_config, sample_csv_files
     # Run comparison
     delta_lens.execute()
     
+
+    result_statement = f"SELECT * FROM {sample_config.entities[1].entityName}_compare"
+
+    comparison_result = delta_lens.con.execute(result_statement).fetchdf()
+
+    summary_results = delta_lens.con.execute(f"select * from {sample_config.entities[1].entityName}_compare_field_summary").fetchdf()
+        
+    logging.info(summary_results)  
+    logging.info(comparison_result)
+
+
     # Verify tables were created
     tables = delta_lens.con.execute("SELECT table_name FROM information_schema.tables").fetchall()
 
