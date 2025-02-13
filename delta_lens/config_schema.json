@@ -1,0 +1,54 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "required": ["defaults", "entities"],
+    "properties": {
+      "defaults": {
+        "type": "object",
+        "required": ["leftSideTitle", "rightSideTitle", "filePattenGlobTemplate"],
+        "properties": {
+          "leftSideTitle": { "type": "string" },
+          "rightSideTitle": { "type": "string" },
+          "filePattenGlobTemplate": { "type": "string" }
+        }
+      },
+      "entities": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["entityName", "leftSide", "rightSide", "primaryKeys"],
+          "properties": {
+            "entityName": { "type": "string" },
+            "leftSide": { "$ref": "#/definitions/side" },
+            "rightSide": { "$ref": "#/definitions/side" },
+            "primaryKeys": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "excludeColumns": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "definitions": {
+      "side": {
+        "type": "object",
+        "required": ["title", "inputFile"],
+        "properties": {
+          "title": { "type": "string" },
+          "inputFile": { "type": "string" },
+          "transform": {
+            "type": "object",
+            "required": ["query"],
+            "properties": {
+              "query": { "type": "string" },
+              "cached": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    }
+  }
