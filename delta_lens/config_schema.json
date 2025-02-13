@@ -1,54 +1,93 @@
 {
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "type": "object",
-    "required": ["defaults", "entities"],
-    "properties": {
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["defaults", "entities"],
+  "additionalProperties": false,
+  "properties": {
       "defaults": {
-        "type": "object",
-        "required": ["leftSideTitle", "rightSideTitle", "filePattenGlobTemplate"],
-        "properties": {
-          "leftSideTitle": { "type": "string" },
-          "rightSideTitle": { "type": "string" },
-          "filePattenGlobTemplate": { "type": "string" }
-        }
+          "type": "object",
+          "required": [],
+          "additionalProperties": false,
+          "properties": {
+              "leftSideTitle": { "type": "string" },
+              "rightSideTitle": { "type": "string" },
+              "filePattenGlobTemplate": { 
+                  "type": "string",
+                
+              }
+          }
+      },
+      "reference_datasets": {
+          "type": "array",
+          "items": {
+              "type": "object",
+              "required": ["datasetName", "inputFile"],
+              "additionalProperties": false,
+              "properties": {
+                  "datasetName": { "type": "string" },
+                  "inputFile": { 
+                      "type": "string",
+                      "pattern": ".*\\.csv|.*\\.csv.gz$"
+                  }
+              }
+          }
       },
       "entities": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "required": ["entityName", "leftSide", "rightSide", "primaryKeys"],
-          "properties": {
-            "entityName": { "type": "string" },
-            "leftSide": { "$ref": "#/definitions/side" },
-            "rightSide": { "$ref": "#/definitions/side" },
-            "primaryKeys": {
-              "type": "array",
-              "items": { "type": "string" }
-            },
-            "excludeColumns": {
-              "type": "array",
-              "items": { "type": "string" }
-            }
+          "type": "array",
+          "minItems": 1,
+          "items": {
+              "type": "object",
+              "required": ["entityName", "leftSide", "rightSide", "primaryKeys"],
+              "additionalProperties": false,
+              "properties": {
+                  "entityName": { "type": "string" },
+                  "dependencies": {
+                      "type": "array",
+                      "items": { "type": "string" }
+                  },
+                  "leftSide": { "$ref": "#/definitions/side" },
+                  "rightSide": { "$ref": "#/definitions/side" },
+                  "primaryKeys": {
+                      "type": "array",
+                      "minItems": 1,
+                      "items": { "type": "string" }
+                  },
+                  "excludeColumns": {
+                      "type": "array",
+                      "items": { "type": "string" }
+                  }
+              }
           }
-        }
       }
-    },
-    "definitions": {
+  },
+  "definitions": {
       "side": {
-        "type": "object",
-        "required": ["title", "inputFile"],
-        "properties": {
-          "title": { "type": "string" },
-          "inputFile": { "type": "string" },
-          "transform": {
-            "type": "object",
-            "required": ["query"],
-            "properties": {
-              "query": { "type": "string" },
-              "cached": { "type": "boolean" }
-            }
+          "type": "object",
+          "required": [],
+          "additionalProperties": false,
+          "properties": {
+              "title": { "type": "string" },
+              "inputFile": { 
+                  "type": "string",
+                  "pattern": ".*\\.csv|.*\\.csv.gz$"
+                  
+              },
+              "transform": {
+                  "type": "object",
+                  "required": ["query"],
+                  "additionalProperties": false,
+                  "properties": {
+                      "query": { 
+                          "type": "string",
+                          "pattern": "^SELECT|WITH"
+                      },
+                      "cached": { 
+                          "type": "boolean",
+                          "default": false
+                      }
+                  }
+              }
           }
-        }
       }
-    }
   }
+}

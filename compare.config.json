@@ -50,12 +50,7 @@
 
             },
             "rightSide": {
-                "title": "system_2",
-                "inputFile":"sample_positions_2.csv",
-                "transform":{
-                    "query": "SELECT * FROM position WHERE symbol = 'AAPL'",
-                    "cached": true
-                }
+               
             },
             "primaryKeys": ["position_id"]
         }
