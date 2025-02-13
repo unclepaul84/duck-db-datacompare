@@ -12,27 +12,43 @@ def sample_config():
     return Config(
         reference_datasets=[ReferenceDataset(datasetName="id_map", inputFile="" ) ],
         entities=[
+             Entity(
+                entityName="trade_2",
+                leftSide=Side(
+                    title="system_1",
+                    inputFile="test_trades_2.csv",
+                    transform=Transform(
+                        query="ELECT i.trade_id_system_2 as trade_id, trade_date, symbol , price , quantity  FROM trade_system_1 t INNER JOIN id_map i ON t.trade_id = i.trade_id_system_1",
+                        cached=True
+                    )
+                ),
+                rightSide=Side(
+                    title="system_2",
+                    inputFile="test_trades_1.csv"
+                    
+                ),
+                primaryKeys=["trade_id", "trade_date"],
+                excludeColumns=[]
+            ),
             Entity(
                 entityName="trade",
                 leftSide=Side(
                     title="system_1",
                     inputFile="test_trades_2.csv",
                     transform=Transform(
-                        query="SELECT * FROM trade_system_1 WHERE symbol = 'AAPL'",
+                        query="SELECT i.trade_id_system_2 as trade_id, trade_date, symbol , price , quantity  FROM trade_system_1 t INNER JOIN id_map i ON t.trade_id = i.trade_id_system_1",
                         cached=True
                     )
                 ),
                 rightSide=Side(
                     title="system_2",
-                    inputFile="test_trades_1.csv",
-                    transform=Transform(
-                        query="SELECT * FROM trade_system_2 WHERE symbol = 'AAPL'",
-                        cached=False
-                    )
+                    inputFile="test_trades_1.csv"
+                    
                 ),
                 primaryKeys=["trade_id", "trade_date"],
                 excludeColumns=[]
             )
+           
         ]
     )
 
@@ -60,7 +76,7 @@ def sample_csv_files():
         writer.writerow(['trade_id_system_1', 'trade_id_system_2'])
         writer.writerow(['1', '10' ])
         writer.writerow(['2', '20' ])
-        writer.writerow(['7', '70' ])
+        writer.writerow(['9', '90' ])
         file3 = f3.name
 
 
@@ -76,13 +92,13 @@ def delta_lens(sample_config):
     # Delete the test database file if it exists
     if os.path.exists("test_run.duckdb"):
         os.remove("test_run.duckdb")
-    return DeltaLens("test_run", sample_config)
+    return DeltaLens("test_run", sample_config, persistent=True)
 
 
 def test_runcompare_with_sample_data(delta_lens, sample_config, sample_csv_files):
     # Update config with temp file paths
-    sample_config.entities[0].leftSide.inputFile = sample_csv_files['left']
-    sample_config.entities[0].rightSide.inputFile = sample_csv_files['right']
+    sample_config.entities[1].leftSide.inputFile = sample_csv_files['left']
+    sample_config.entities[1].rightSide.inputFile = sample_csv_files['right']
     sample_config.reference_datasets[0].inputFile = sample_csv_files['id_map']
     
     # Run comparison

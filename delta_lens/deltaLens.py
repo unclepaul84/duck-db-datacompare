@@ -12,12 +12,18 @@ class DeltaLens:
     """
     
     """
-    def __init__(self, runName: str, entityConfig: Config):
+    def __init__(self, runName: str, entityConfig: Config, persistent = False, persist_path = '.'):
         self.config = entityConfig
        
         self.runName = runName
-        self.logger = logging.getLogger(self.__class__.__name__ + "." + runName)
-        self.duck_db_fileName = f'{''.join(c for c in runName if c.isalnum() or c in '._- ')}.duckdb'
+        self.logger = logging.getLogger(self.__class__.__name__ + "[" + runName + "]")
+        clean_name = f'{''.join(c for c in runName if c.isalnum() or c in '._- ')}'
+
+        if persistent:
+            self.duck_db_fileName =f'{os.path.join(persist_path, (clean_name +  ".duckdb"))}'
+        else:
+            self.duck_db_fileName =f':memory:{clean_name}'
+
         self.con = duckdb.connect(self.duck_db_fileName)
         self.logger.info(f"Connected to DuckDB database @: {self.duck_db_fileName}")
       
@@ -54,20 +60,53 @@ class DeltaLens:
                      raise FileNotFoundError(f"file not found at: {dataset.inputFile}")
                 self.con.execute(f"CREATE TABLE {dataset.datasetName} AS SELECT * FROM read_csv_auto('{dataset.inputFile}')")
 
-    def execute(self):      
+    def __createResultsTable(self):
+        self.con.execute("CREATE TABLE entity_compare_results (entity VARCHAR PRIMARY KEY, rows_left INT, rows_right INT, rows_fully_matched INT, error_text VARCHAR, success INT);")
+    
+    def execute(self, continue_on_error = True):      
         if hasattr(self, '_has_executed'):
             raise ValueError("Execute method has already been called")
         self.populateDefaults()
         Config.Validate(self.config)
+        self.__createResultsTable()
         self.__loadExternalDatasets()
         for entity in self.config.entities:
             self.logger.info(f"Processing entity: {entity.entityName}")
-            equityComparer = EntityComparer(self.con, entity)
-            equityComparer.runcompare()
-            self.logger.info(f"Completed processing entity: {entity.entityName}")
+            try:
+                equityComparer = EntityComparer(self.con, entity)
+                equityComparer.runcompare()
+                # Log success
+                self.con.execute(
+                    """INSERT INTO entity_compare_results 
+                    (entity, rows_left, rows_right, rows_fully_matched, error_text, success)
+                    SELECT ?, 
+                        COUNT(*) FILTER (WHERE _exists_left), 
+                        COUNT(*) FILTER (WHERE _exists_right),
+                        COUNT(*) FILTER (WHERE _full_match),
+                        NULL,
+                        1
+                    FROM {}_compare""".format(entity.entityName), 
+                    [entity.entityName]
+                )
+                self.logger.info(f"Completed processing entity: {entity.entityName}")
+            except Exception as e:
+                error_msg = str(e)
+                self.logger.error(f"Error processing entity {entity.entityName}: {error_msg}")
+                # Log failure
+                self.con.execute(
+                    """INSERT INTO entity_compare_results 
+                    (entity, rows_left, rows_right, rows_fully_matched, error_text, success)
+                    VALUES (?, NULL, NULL, NULL, ?, 0)""",
+                    [entity.entityName, error_msg]
+                )
+                if not continue_on_error:
+                    raise
 
-        self._has_executed = True
+
         
+        self.logger.info(self.con.execute(f"select * from entity_compare_results").fetchdf())  
+        self._has_executed = True
+
 
 
 class EntityComparer:
@@ -75,7 +114,7 @@ class EntityComparer:
     
     """
     def __init__(self, con:duckdb.DuckDBPyConnection, entity: Entity):
-        self.logger = logging.getLogger(self.__class__.__name__ + "." + entity.entityName)
+        self.logger = logging.getLogger(self.__class__.__name__ + "[" + entity.entityName + "]")
         self.con = con
         self.entity = entity
         self.leftSideInputTable = f"{self.entity.entityName}_{self.entity.leftSide.title}"
@@ -119,27 +158,9 @@ class EntityComparer:
   
     def runcompare(self):
        
-
-        self.logger.info(f"Loading data into left side input table: {self.leftSideInputTable} from {self.entity.leftSide.inputFile}")
-
-        if not os.path.exists(self.entity.leftSide.inputFile):
-            raise FileNotFoundError(f"Left side input file not found: {self.entity.leftSide.inputFile}")
-       
-
-        self.con.execute(f"CREATE TABLE  {self.leftSideInputTable} AS SELECT * FROM read_csv_auto('{self.entity.leftSide.inputFile}')")
-        self.logger.info(f"Loading data into right side input table: {self.rightSideInputTable} from {self.entity.rightSide.inputFile}")
-
-        if not os.path.exists(self.entity.rightSide.inputFile):
-            raise FileNotFoundError(f"Right side input file not found: {self.entity.rightSide.inputFile}")
-       
-        self.con.execute(f"CREATE TABLE  {self.rightSideInputTable} AS SELECT * FROM read_csv_auto('{self.entity.rightSide.inputFile}')")
-
-        self.logger.info(f"adding primary key to left side input table: {self.leftSideInputTable}")
-        self.con.execute(f"ALTER TABLE {self.leftSideInputTable} ADD PRIMARY KEY ({','.join(self.entity.primaryKeys)})")
+        self.__create_left_side_table()
         
-        self.logger.info(f"adding primary key to right side input table: {self.rightSideInputTable}")
-        self.con.execute(f"ALTER TABLE {self.rightSideInputTable} ADD PRIMARY KEY ({','.join(self.entity.primaryKeys)})")
-
+        self.__create_right_side_table()
 
         if self.entity.leftSide.transform:
             self.__applyLeftTransform()
@@ -148,29 +169,10 @@ class EntityComparer:
 
 
         # get column names from both tables
-        left_columns = self.con.execute(f"SELECT column_name FROM information_schema.columns WHERE table_name = '{self.leftSideInputTable}'").fetchall()
-        right_columns = self.con.execute(f"SELECT column_name FROM information_schema.columns WHERE table_name = '{self.rightSideInputTable}'").fetchall()
-
-        # convert from list of tuples to list of strings
-        left_columns = [col[0] for col in left_columns]
-        right_columns = [col[0] for col in right_columns]
-
+        left_columns, right_columns = self.__extract_columns()
 
         # verify column data types match between both tables
-        left_dtypes = self.con.execute(f"SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{self.leftSideInputTable}'").fetchdf()
-        right_dtypes = self.con.execute(f"SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{self.rightSideInputTable}'").fetchdf()
-
-        # create dictionaries mapping column names to data types
-        left_dtype_dict = dict(zip(left_dtypes['column_name'], left_dtypes['data_type']))
-        right_dtype_dict = dict(zip(right_dtypes['column_name'], right_dtypes['data_type']))
-
-        # check matching columns have same data type
-        common_columns = set(left_columns) & set(right_columns)
-        for col in common_columns:
-            if left_dtype_dict[col] != right_dtype_dict[col]:
-                raise ValueError(f"Data type mismatch for column '{col}': left table= {self.leftSideInputTable}.{left_dtype_dict[col]}, right table={self.rightSideInputTable}.{right_dtype_dict[col]}")
-
-
+        self.__validate_data_types(left_columns, right_columns)
 
 
         # verify primary keys exist in both tables
@@ -208,10 +210,10 @@ class EntityComparer:
             if in_left and in_right:
                 column_expressions.append(f"{self.leftSideInputTable}.{col} as {col}_left")
                 column_expressions.append(f"{self.rightSideInputTable}.{col} as {col}_right")
-                column_expressions.append(f"({self.leftSideInputTable}.{col} = {self.rightSideInputTable}.{col} OR {self.leftSideInputTable}.{col} IS NULL AND {self.rightSideInputTable}.{col} IS NULL) as {col}_match")
+                column_expressions.append(f"({self.leftSideInputTable}.{col} = {self.rightSideInputTable}.{col} OR ({self.leftSideInputTable}.{col} IS NULL AND {self.rightSideInputTable}.{col} IS NULL)) as {col}_match")
                 match_columns.append(f"{col}_match")
             else:
-                raise ValueError(f"Column '{col}' not found in both tables: left table= {self.leftSideInputTable}.{in_left}, right table={self.rightSideInputTable}.{in_right}")
+                raise ValueError(f"Column '{col}' not found in both tables: left table= {self.leftSideInputTable}.found={in_left}, right table={self.rightSideInputTable}.found={in_right}")
 
         for col in self.entity.excludeColumns:
             in_left = col in left_columns
@@ -264,6 +266,55 @@ class EntityComparer:
 
         # Generate summary statistics for each field using SQL
        
+        self.__create_field_summary_table(match_columns)
+
+        summary_results = self.con.execute(f"select * from {self.entity.entityName}_compare_field_summary").fetchdf()
+        
+        self.logger.info(summary_results)  
+        self.logger.info(comparison_result)
+
+    def __create_right_side_table(self):
+        self.logger.info(f"Loading data into right side input table: {self.rightSideInputTable} from {self.entity.rightSide.inputFile}")
+        if not os.path.exists(self.entity.rightSide.inputFile):
+            raise FileNotFoundError(f"Right side input file not found: {self.entity.rightSide.inputFile}")
+       
+        self.con.execute(f"CREATE TABLE  {self.rightSideInputTable} AS SELECT * FROM read_csv_auto('{self.entity.rightSide.inputFile}')")  
+        self.logger.info(f"adding primary key to right side input table: {self.rightSideInputTable}")
+        self.con.execute(f"ALTER TABLE {self.rightSideInputTable} ADD PRIMARY KEY ({','.join(self.entity.primaryKeys)})")
+
+    def __create_left_side_table(self):
+        self.logger.info(f"Loading data into left side input table: {self.leftSideInputTable} from {self.entity.leftSide.inputFile}")
+        if not os.path.exists(self.entity.leftSide.inputFile):
+            raise FileNotFoundError(f"Left side input file not found: {self.entity.leftSide.inputFile}")
+       
+        self.con.execute(f"CREATE TABLE  {self.leftSideInputTable} AS SELECT * FROM read_csv_auto('{self.entity.leftSide.inputFile}')")
+        self.logger.info(f"adding primary key to left side input table: {self.leftSideInputTable}")
+        self.con.execute(f"ALTER TABLE {self.leftSideInputTable} ADD PRIMARY KEY ({','.join(self.entity.primaryKeys)})")
+
+    def __extract_columns(self):
+        left_columns = self.con.execute(f"SELECT column_name FROM information_schema.columns WHERE table_name = '{self.leftSideInputTable}'").fetchall()
+        right_columns = self.con.execute(f"SELECT column_name FROM information_schema.columns WHERE table_name = '{self.rightSideInputTable}'").fetchall()
+
+        # convert from list of tuples to list of strings
+        left_columns = [col[0] for col in left_columns]
+        right_columns = [col[0] for col in right_columns]
+        return left_columns,right_columns
+
+    def __validate_data_types(self, left_columns, right_columns):
+        left_dtypes = self.con.execute(f"SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{self.leftSideInputTable}'").fetchdf()
+        right_dtypes = self.con.execute(f"SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{self.rightSideInputTable}'").fetchdf()
+
+        # create dictionaries mapping column names to data types
+        left_dtype_dict = dict(zip(left_dtypes['column_name'], left_dtypes['data_type']))
+        right_dtype_dict = dict(zip(right_dtypes['column_name'], right_dtypes['data_type']))
+
+        # check matching columns have same data type
+        common_columns = set(left_columns) & set(right_columns)
+        for col in common_columns:
+            if left_dtype_dict[col] != right_dtype_dict[col]:
+                raise ValueError(f"Data type mismatch for column '{col}': left table= {self.leftSideInputTable}.{left_dtype_dict[col]}, right table={self.rightSideInputTable}.{right_dtype_dict[col]}")
+
+    def __create_field_summary_table(self, match_columns):
         summary_query = """
             WITH match_counts AS (
                 SELECT
@@ -284,11 +335,6 @@ class EntityComparer:
         summary_view_statement = f"CREATE VIEW {self.entity.entityName}_compare_field_summary AS {summary_query.format(entity=self.entity.entityName)}"
 
         self.con.execute(summary_view_statement)
-
-        summary_results = self.con.execute(f"select * from {self.entity.entityName}_compare_field_summary").fetchdf()
-        
-        self.logger.info(summary_results)  
-        self.logger.info(comparison_result)
         # if transform query is provided, execute it
 
     
