@@ -101,7 +101,7 @@ docker-compose run deltalens --run-name custom_run --log-level DEBUG
 
 
 
-# DeltaLens Jupyter Notebook Usage Guide
+## Using DeltaLens in Jupyter Notebooks
 
 DeltaLens can be used interactively in Jupyter notebooks for data comparison analysis. See data_compate.ipynb
 
