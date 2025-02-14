@@ -51,6 +51,12 @@ flowchart LR
 git clone https://github.com/unclepaul84/duck-db-datacompare.git
 cd duck-db-datacompare
 
+#create and activate venv
+
+python -m venv venv
+
+source venv/bin/activate
+
 # Install dependencies
 pip install -r requirements.txt
 ```
