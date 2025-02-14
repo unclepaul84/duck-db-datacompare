@@ -110,6 +110,20 @@ docker-compose up
 docker-compose run deltalens --run-name custom_run --log-level DEBUG
 ```
 
+Or Pull the Docker image:
+
+```bash
+docker pull unclepaul84/deltalens:latest
+docker run unclepaul84/deltalens:latest
+```
+
+Or use a specific version:
+
+```bash
+docker pull unclepaul84/deltalens:0.1.2
+docker run unclepaul84/deltalens:latest
+
+```
 
 
 ## Using DeltaLens in Jupyter Notebooks
