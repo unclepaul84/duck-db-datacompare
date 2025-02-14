@@ -12,6 +12,28 @@
 
 DeltaLens is a powerful tool for comparing large datasets using DuckDB as the comparison engine. It supports data transformations, automated field-level matching, and detailed comparison reporting.
 
+```mermaid
+flowchart LR
+    Trades_1@{ shape: doc, label: "new_system_trades.csv" }
+    Trades_2@{ shape: doc, label: "lagecy_system_trades.csv" }
+    Config@{ shape: doc, label: "config.json" }
+    Config-->TableQueryGenerator
+    Trades_2 -->|load|DuckDB
+    Trades_1 -->|load|DuckDB
+    subgraph DeltaLens.py
+        TableQueryGenerator@{ shape: subproc, label: "QueryGenerator" }
+        TableQueryGenerator-->|generate compare queries|DuckDB
+        DuckDB@{ shape: lin-cyl, label: "DuckDB" }
+        DuckDB-->Exporter
+        Exporter@{ shape: subproc, label: "Exporter" }
+       
+    end
+    Exporter-->|export|Sqlite
+    Sqlite@{ shape: lin-cyl, label: "results.sqlite" }
+
+
+```
+
 ## Features
 
 - Compare CSV datasets with configurable primary keys
@@ -77,6 +99,13 @@ docker-compose up
 docker-compose run deltalens --run-name custom_run --log-level DEBUG
 ```
 
+
+
+# DeltaLens Jupyter Notebook Usage Guide
+
+DeltaLens can be used interactively in Jupyter notebooks for data comparison analysis. See data_compate.ipynb
+
+
 ## Configuration
 
 Create a compare.config.json file:
@@ -122,10 +151,10 @@ Create a compare.config.json file:
 ## Output Files
 
 The tool generates several output files:
-- `[run_name].duckdb`: DuckDB database with comparison results
+- `[run_name].duckdb`: DuckDB database with comparison results (if persistent mode enabled)
 - `[run_name].sqlite`: SQLite export of comparison results (if enabled)
 
-Results include:
+Resulting Tables include:
 - `entity_compare_results`: Overall comparison summary
 - `[entity]_compare`: Detailed record-level comparison
 - `[entity]_compare_field_summary`: Field-level match statistics
