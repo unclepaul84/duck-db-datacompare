@@ -27,7 +27,7 @@ jobs:
         env:
           DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
           DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
-        run: python publish_to_dockerhub.py
+        run: python publish_to_DockerHub.py
         
       - name: Build and push PyPI Package
         env:
