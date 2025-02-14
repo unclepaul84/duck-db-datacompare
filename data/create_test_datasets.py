@@ -1,3 +1,47 @@
+
+"""
+A script for generating and manipulating test datasets of trade data.
+This module creates large CSV files containing randomized trade data and provides
+functionality to modify or delete random entries, simulating differences between
+legacy and new systems for testing purposes.
+Global Variables:
+    trade_id (int): A global counter for generating unique trade IDs.
+Functions:
+    generate_random_trade() -> list:
+        Generates a single random trade record with realistic market data.
+        Returns a list containing: [trade_id, timestamp, symbol, trade_type, price, quantity]
+    create_large_trade_file(filename: str, target_size_gb: int = 20) -> None:
+        Creates a CSV file with random trade data up to the specified size.
+        Args:
+            filename: Name of the output CSV file
+            target_size_gb: Desired file size in gigabytes (default: 20)
+    estimate_total_records(filename: str) -> int:
+        Estimates the total number of records in a CSV file based on sampling.
+        Args:
+            filename: Path to the CSV file
+        Returns:
+            Estimated number of records in the file
+    modify_random_prices(filename: str, num_modifications: int) -> None:
+        Modifies random price values in the specified CSV file.
+        Args:
+            filename: Path to the CSV file
+            num_modifications: Number of random prices to modify
+    delete_random_rows(filename: str, num_deletions: int) -> None:
+        Deletes random rows from the specified CSV file.
+        Args:
+            filename: Path to the CSV file
+            num_deletions: Number of rows to delete randomly
+The script creates two files when run:
+    - legacy_system_trades.csv: Original trade data with modifications
+    - new_system_trades.csv: Copy of original trade data before modifications
+The generated data includes:
+    - Trade ID
+    - Timestamp (within last 365 days)
+    - Symbol (from major tech and financial companies)
+    - Trade Type (BUY/SELL)
+    - Price (between 10 and 1000)
+    - Quantity (between 1 and 10000)
+"""
 import random
 from datetime import datetime, timedelta
 import csv

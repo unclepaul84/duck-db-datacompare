@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  deltalens:
+    build: .
+    volumes:
+      - ./data:/data
+    environment:
+      - DELTALENS_CONFIG=docker-compare.config.json
+      - DELTALENS_OUTPUT_DIR=output
+      - DELTALENS_LOG_LEVEL=INFO
+      - DELTALENS_EXPORT_SQLITE=true
+      - DELTALENS_CONTINUE_ON_ERROR=true
+      - DELTALENS_SQLITE_SAMPLE=10001

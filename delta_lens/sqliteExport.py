@@ -23,6 +23,9 @@ def export_to_sqlite(conn, sqlite_db_path: str, sample_threshold = 10000, table_
         - For tables with more rows than sample_threshold, random sampling is used
     """
     logger = logging.getLogger(__name__)
+    # Check if SQLite file exists and raise error
+    if os.path.exists(sqlite_db_path):
+        raise FileExistsError(f"SQLite database file '{sqlite_db_path}' already exists")
 
     if table_filter is None:
         table_filter = lambda table: table.endswith("_compare_field_summary") or table.endswith("entity_compare_results") or  table.endswith("_compare")

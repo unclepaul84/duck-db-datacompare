@@ -136,9 +136,6 @@ class DeltaLens:
                 if not continue_on_error:
                     raise
 
-
-        
-        self.logger.info(self.con.execute(f"select * from entity_compare_results").fetchdf())  
         self._has_executed = True
 
 
