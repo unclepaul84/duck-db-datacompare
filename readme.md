@@ -74,10 +74,10 @@ pip install -r requirements.txt
 
 ```bash
 # Basic comparison
-python cli.py --config data/compare.config.json --run-name daily_compare
+deltalens --config data/compare.config.json --run-name daily_compare
 
 # Full options
-python cli.py \
+deltalens \
   --config data/compare.config.json \
   --run-name daily_compare \
   --output-dir ./results \
