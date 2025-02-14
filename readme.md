@@ -43,6 +43,7 @@ flowchart LR
 - Support for reference datasets
 - Docker support for containerized execution
 - CLI and Python API interfaces
+- Data Pipeline and CI/CD friendly
 
 ## Installation
 
