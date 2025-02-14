@@ -75,7 +75,7 @@ The script creates two CSV files with randomized trade data:
 ```bash
 cd data
 # Generate sample data (creates 2GB files by default)
-python data/create_test_datasets.py
+python create_test_datasets.py
 ```
 ### Command Line Interface
 
