@@ -144,7 +144,7 @@ def modify_random_prices(filename, num_modifications):
                 current_line += 1
     
     # Replace original file with modified version
-    os.replace(temp_filename, filename)
+    shutil.move(temp_filename, filename)
 
 def delete_random_rows(filename, num_deletions):
     # Get estimated total records and generate positions to delete
@@ -176,7 +176,7 @@ def delete_random_rows(filename, num_deletions):
                 current_line += 1
     
     # Replace original file with modified version
-    os.replace(temp_filename, filename)
+    shutil.move(temp_filename, filename)
 
 if __name__ == "__main__":
     output_file = "legacy_system_trades.csv"
@@ -187,9 +187,9 @@ if __name__ == "__main__":
 
     shutil.copy2("legacy_system_trades.csv", "new_system_trades.csv")
     print(f"Deleting randoom rows in {output_file}...")
-    delete_random_rows(output_file,100000)
+    delete_random_rows(output_file,10000)
 
     print(f"Modifying randoom rows in {output_file}...")
-    modify_random_prices(output_file,50000)
+    modify_random_prices(output_file,10000)
 
     print("File generation complete!")
