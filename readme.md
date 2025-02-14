@@ -69,21 +69,7 @@ pip install -r requirements.txt
 ```
 
 ## Basic Usage
-## Generating Sample Data
 
-DeltaLens includes a script to generate sample trade data for testing and demonstration purposes.
-
-### Sample Data Generator
-
-The script creates two CSV files with randomized trade data:
-- `legacy_system_trades.csv`: Original trade data with modifications
-- `new_system_trades.csv`: Copy of original data with known differences
-
-```bash
-cd data
-# Generate sample data (creates 2GB files by default)
-python create_test_datasets.py
-```
 ### Command Line Interface
 
 ```bash
@@ -187,7 +173,21 @@ Resulting Tables include:
 - `[entity]_compare_field_summary`: Field-level match statistics
 
 ## Development
+### Generating Sample Data
 
+DeltaLens includes a script to generate sample trade data for testing and demonstration purposes.
+
+#### Sample Data Generator
+
+The script creates two CSV files with randomized trade data:
+- `legacy_system_trades.csv`: Original trade data with modifications
+- `new_system_trades.csv`: Copy of original data with known differences
+
+```bash
+cd data
+# Generate sample data (creates 2GB files by default)
+python create_test_datasets.py
+```
 ```bash
 # Install development dependencies
 pip install -r requirements.txt
