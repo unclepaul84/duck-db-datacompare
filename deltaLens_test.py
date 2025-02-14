@@ -6,6 +6,7 @@ from delta_lens.deltaLens import DeltaLens, EntityComparer
 from delta_lens.config import Config, Entity, Side, Transform, Defaults,ReferenceDataset
 import duckdb
 import logging
+from delta_lens.sqliteExport import *
 
 @pytest.fixture
 def sample_config():
@@ -92,6 +93,9 @@ def delta_lens(sample_config):
     # Delete the test database file if it exists
     if os.path.exists("test_run.duckdb"):
         os.remove("test_run.duckdb")
+    if os.path.exists("test_run.sqlite"):
+        os.remove("test_run.sqlite")
+    
     return DeltaLens("test_run", sample_config, persistent=True)
 
 
@@ -123,6 +127,9 @@ def test_runcompare_with_sample_data(delta_lens, sample_config, sample_csv_files
     assert "trade_system_1" in table_names
     assert "trade_system_2" in table_names
     assert "id_map" in table_names
+
+    export_to_sqlite( delta_lens.con, delta_lens.runName + ".sqlite" )
+
     logging.info(table_names)
 
 if __name__ == "__main__":

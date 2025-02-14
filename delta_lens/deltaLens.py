@@ -393,7 +393,7 @@ class EntityComparer:
                     """ + \
                     ",\n            ".join([f"SUM(CASE WHEN {col} THEN 1 ELSE 0 END) as {col[:-6]}_matches" for col in match_columns]) + \
         """
-                FROM {entity}_compare
+                FROM {entity}_compare WHERE _exists_left = 1 and _exists_right = 1 
             )
             SELECT
                 """ + \

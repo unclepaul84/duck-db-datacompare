@@ -1,0 +1,58 @@
+{
+    "defaults": 
+    {
+        "leftSideTitle": "system_1",
+        "rightSideTitle": "system_2",
+        "filePattenGlobTemplate": "{entityName}_{title}.csv"
+    },
+    "reference_datasets":[
+        {
+            "datasetName":"instrument_id_translation",       
+            "inputFile":"instrument_id_translation.csv"
+        }
+    ],
+    "entities": [
+        {
+            "entityName":"trade",
+            "leftSide": {
+                "title": "system_1",
+                "inputFile":"sample_trades.csv",
+                "transform":{
+                    "query": "SELECT * FROM trade WHERE symbol = 'AAPL'",
+                    "cached": true
+                }
+                
+
+            },
+            "rightSide": {
+                "title": "system_2",
+                "inputFile":"sample_trades_2.csv",
+                "transform":{
+                    "query": "SELECT * FROM trade WHERE symbol = 'AAPL'",
+                    "cached": true
+                }
+            },
+            "primaryKeys": ["trade_id"],
+            "excludeColumns": ["price"]
+
+        },
+        {
+            "entityName":"positions",
+            "dependencies": ["trade"],
+            "leftSide": {
+                "title": "system_1",
+                "inputFile":"sample_positions.csv",
+                "transform":{
+                    "query": "SELECT * FROM position WHERE symbol = 'AAPL'",
+                    "cached": true
+                }
+                
+
+            },
+            "rightSide": {
+               
+            },
+            "primaryKeys": ["position_id"]
+        }
+    ]
+}

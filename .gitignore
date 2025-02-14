@@ -177,3 +177,8 @@ test_run.duckdb
 sample_trades_compare.duckdb
 sample_trades.csv
 sample_trades_2.csv
+test_run.sqlite
+*.sqlite
+legacy_system_trades.csv
+new_system_trades.csv
+.tmp/
