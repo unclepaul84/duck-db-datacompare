@@ -98,5 +98,5 @@ if __name__ == "__main__":
     
 
 
-    publish_package(test=False)
+    publish_package()
     print("Package published to PyPI successfully!")
