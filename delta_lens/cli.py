@@ -63,7 +63,7 @@ def parse_args():
     parser.add_argument(
         '--config', '-c',
         type=str,
-        default=os.getenv('DELTALENS_CONFIG', 'compare.config.json'),
+        default=os.getenv('DELTALENS_CONFIG'),
         help='Path to config file (env: DELTALENS_CONFIG)'
     )
     
@@ -103,7 +103,7 @@ def parse_args():
     parser.add_argument(
         '--export-sqlite',
         action='store_true',
-        default=os.getenv('DELTALENS_EXPORT_SQLITE', 'true').lower() in ('true', '1', 'yes'),
+        default=os.getenv('DELTALENS_EXPORT_SQLITE', 'false').lower() in ('true', '1', 'yes'),
         help='Export results to SQLite (env: DELTALENS_EXPORT_SQLITE)'
     )
     
