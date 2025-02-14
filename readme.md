@@ -50,6 +50,8 @@ Install from PyPI:
 ```bash
 pip install delta-lens
 ```
+see data_compate.ipynb for example.
+
 Or install from source:
 ```bash
 # Clone the repository
