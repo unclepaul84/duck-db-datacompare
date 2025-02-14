@@ -19,7 +19,7 @@ def sample_config():
                     title="system_1",
                     inputFile="test_trades_2.csv",
                     transform=Transform(
-                        query="ELECT i.trade_id_system_2 as trade_id, trade_date, symbol , price , quantity  FROM trade_system_1 t INNER JOIN id_map i ON t.trade_id = i.trade_id_system_1",
+                        query="ELECT i.trade_id_system_2 as trade_id, trade_date, symbol , price , quantity,description  FROM trade_system_1 t INNER JOIN id_map i ON t.trade_id = i.trade_id_system_1",
                         cached=True
                     )
                 ),
@@ -29,7 +29,7 @@ def sample_config():
                     
                 ),
                 primaryKeys=["trade_id", "trade_date"],
-                excludeColumns=[]
+                excludeColumns=['description']
             ),
             Entity(
                 entityName="trade",
@@ -37,7 +37,7 @@ def sample_config():
                     title="system_1",
                     inputFile="test_trades_2.csv",
                     transform=Transform(
-                        query="SELECT i.trade_id_system_2 as trade_id, trade_date, symbol , price , quantity  FROM trade_system_1 t INNER JOIN id_map i ON t.trade_id = i.trade_id_system_1",
+                        query="SELECT i.trade_id_system_2 as trade_id, trade_date, symbol , price , quantity,description  FROM trade_system_1 t INNER JOIN id_map i ON t.trade_id = i.trade_id_system_1",
                         cached=True
                     )
                 ),
@@ -47,7 +47,7 @@ def sample_config():
                     
                 ),
                 primaryKeys=["trade_id", "trade_date"],
-                excludeColumns=[]
+                excludeColumns=['description']
             )
            
         ]
@@ -58,18 +58,18 @@ def sample_csv_files():
     # Create temporary CSV files for testing
     with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='trades_system_1.csv') as f1:
         writer = csv.writer(f1)
-        writer.writerow(['trade_id', 'trade_date', 'symbol', 'price', 'quantity'])
-        writer.writerow(['10', '2021-01-01', 'AAPL', '150.0', '100'])
-        writer.writerow(['20', '2021-01-01', 'GOOGL', '2500.0', '50'])
-        writer.writerow(['90', '2021-01-01', 'GOOGL', '2500.0', '50'])
+        writer.writerow(['trade_id', 'trade_date', 'symbol', 'price', 'quantity', 'description'])
+        writer.writerow(['10', '2021-01-01', 'AAPL', '150.0', '100', 'asdf,da"sdf@!^#%!_#&^%]'])
+        writer.writerow(['20', '2021-01-01', 'GOOGL', '2500.0', '50','asdf,ads"df@!^#%!_#&^%]'])
+        writer.writerow(['90', '2021-01-01', 'GOOGL', '2500.0', '50','asdf,adsd"f@!^#%!_#&^%]'])
         file1 = f1.name
 
     with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='trades_system_2.csv') as f2:
         writer = csv.writer(f2)
-        writer.writerow(['trade_id', 'trade_date', 'symbol', 'price', 'quantity'])
-        writer.writerow(['1', '2021-01-01', 'AAPL', '151.0', '101'])
-        writer.writerow(['2', '2021-01-01','GOOGL', '2500.0', '50'])
-        writer.writerow(['7', '2021-01-01','GOOGL', '2500.0', '50'])
+        writer.writerow(['trade_id', 'trade_date', 'symbol', 'price', 'quantity', 'description'])
+        writer.writerow(['1', '2021-01-01', 'AAPL', '151.0', '101', 'asd"f,asdf@!^#%!_#&^%]'])
+        writer.writerow(['2', '2021-01-01','GOOGL', '2500.0', '50', 'asdf,a`~@$()*s+*+df@!^#%!_#&^%]'])
+        writer.writerow(['9', '2021-01-01','GOOGL', '2500.0', '50', 'asdf,asdf@!^#%!_#&^%]'])
         file2 = f2.name
 
     with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='id_map.csv') as f3:
@@ -124,9 +124,18 @@ def test_runcompare_with_sample_data(delta_lens, sample_config, sample_csv_files
 
     table_names = [t[0] for t in tables]
     
+    logging.info(table_names)
+
     assert "trade_system_1" in table_names
     assert "trade_system_2" in table_names
     assert "id_map" in table_names
+
+
+    results = delta_lens.con.execute("SELECT * FROM entity_compare_results").fetch_df()
+    
+    assert results.loc[0, 'success'] == 0
+    assert results.loc[1, 'success'] == 1
+    assert results.loc[1, 'rows_fully_matched'] == 2
 
     export_to_sqlite( delta_lens.con, delta_lens.runName + ".sqlite" )
 
