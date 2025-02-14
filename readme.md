@@ -10,7 +10,7 @@
 
 # DeltaLens - Data Comparison Tool
 
-DeltaLens is a powerful tool for comparing large datasets using DuckDB as the comparison engine. It supports data transformations, automated field-level matching, and detailed comparison reporting.
+DeltaLens is a powerful tool for comparing large datasets using [DuckDB](https://duckdb.org/) as the comparison engine. It supports data transformations, automated field-level matching, and detailed comparison reporting.
 
 ```mermaid
 flowchart LR
