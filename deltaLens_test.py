@@ -59,9 +59,9 @@ def sample_csv_files():
     with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='trades_system_1.csv') as f1:
         writer = csv.writer(f1)
         writer.writerow(['trade_id', 'trade_date', 'symbol', 'price', 'quantity'])
-        writer.writerow(['1', '2021-01-01', 'AAPL', '150.0', '100'])
-        writer.writerow(['2', '2021-01-01', 'GOOGL', '2500.0', '50'])
-        writer.writerow(['9', '2021-01-01', 'GOOGL', '2500.0', '50'])
+        writer.writerow(['10', '2021-01-01', 'AAPL', '150.0', '100'])
+        writer.writerow(['20', '2021-01-01', 'GOOGL', '2500.0', '50'])
+        writer.writerow(['90', '2021-01-01', 'GOOGL', '2500.0', '50'])
         file1 = f1.name
 
     with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='trades_system_2.csv') as f2:
@@ -75,9 +75,9 @@ def sample_csv_files():
     with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='id_map.csv') as f3:
         writer = csv.writer(f3)
         writer.writerow(['trade_id_system_1', 'trade_id_system_2'])
-        writer.writerow(['1', '10' ])
-        writer.writerow(['2', '20' ])
-        writer.writerow(['9', '90' ])
+        writer.writerow(['10', '1' ])
+        writer.writerow(['20', '2' ])
+        writer.writerow(['90', '9' ])
         file3 = f3.name
 
 
