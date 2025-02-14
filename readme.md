@@ -46,6 +46,11 @@ flowchart LR
 
 ## Installation
 
+Install from PyPI:
+```bash
+pip install delta-lens
+```
+Or install from source:
 ```bash
 # Clone the repository
 git clone https://github.com/unclepaul84/duck-db-datacompare.git
@@ -169,8 +174,8 @@ Resulting Tables include:
 
 ```bash
 # Install development dependencies
-pip install -r dependencies.txt
-pip install -r dev.dependencies.txt
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
 
 # Run tests
 pytest -v
