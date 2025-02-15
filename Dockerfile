@@ -24,13 +24,16 @@ COPY cli.py .
 RUN mkdir -p /data
 
 # Set environment variables with defaults
-ENV DELTALENS_CONFIG=compare.config.json \
+
+ENV DELTALENS_CONFIG=docker-compare.config.json \
     DELTALENS_OUTPUT_DIR=output \
     DELTALENS_LOG_LEVEL=INFO \
     DELTALENS_EXPORT_SQLITE=true \
+    DELTALENS_EXPORT_CSV=true \
     DELTALENS_CONTINUE_ON_ERROR=true \
-    DELTALENS_SQLITE_SAMPLE=10000
-
+    DELTALENS_EXPORT_SAMPLING_THRESHOLD=10001 \
+    DELTALENS_PERSISTENT=true \
+    DELTALENS_EXPORT_MISMATCHES_ONLY=true
 # Set volume for data and configuration
 VOLUME ["/data"]
 
