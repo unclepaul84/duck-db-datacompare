@@ -10,7 +10,7 @@
 
 # DeltaLens - Data Comparison Tool
 
-DeltaLens is a powerful tool for comparing large datasets using [DuckDB](https://duckdb.org/) as the comparison engine. It supports data transformations, automated field-level matching, and detailed comparison reporting.
+DeltaLens is a powerful tool for comparing large datasets using the power of [DuckDB](https://duckdb.org/) as the comparison engine. It supports data transformations, automated field-level matching, and detailed comparison reporting.
 
 ```mermaid
 flowchart LR
@@ -39,7 +39,8 @@ flowchart LR
 - Compare CSV datasets with configurable primary keys
 - Apply SQL transformations to data before comparison
 - Generate detailed field-level match statistics
-- Export results to SQLite for analysis
+- Export results to SQLite and CSV for analysis
+- Support for larger than memory datasets
 - Support for reference datasets
 - Docker support for containerized execution
 - CLI and Python API interfaces
@@ -53,21 +54,6 @@ pip install delta-lens
 ```
 see data_compate.ipynb for example.
 
-Or install from source:
-```bash
-# Clone the repository
-git clone https://github.com/unclepaul84/duck-db-datacompare.git
-cd duck-db-datacompare
-
-#create and activate venv
-
-python -m venv venv
-
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-```
 
 ## Basic Usage
 
@@ -85,34 +71,21 @@ deltalens \
   --persistent \
   --continue-on-error \
   --export-sqlite \
-  --sqlite-sample 5000 \
+  --export-csv \
+  --export-sampling-threshold 5000 \
+  --export-mismatches-only \
   --log-level DEBUG
 ```
 
-### Docker
 
-```bash
-# Run with docker-compose
-docker-compose up
-
-# Run with custom arguments
-docker-compose run deltalens --run-name custom_run --log-level DEBUG
-```
 
 Or Pull the Docker image:
 
 ```bash
-docker pull unclepaul84/deltalens:latest
+
 docker run unclepaul84/deltalens:latest
 ```
 
-Or use a specific version:
-
-```bash
-docker pull unclepaul84/deltalens:0.1.2
-docker run unclepaul84/deltalens:latest
-
-```
 
 
 ## Using DeltaLens in Jupyter Notebooks
@@ -160,7 +133,9 @@ Create a compare.config.json file:
 | `DELTALENS_OUTPUT_DIR` | Output directory | `.` |
 | `DELTALENS_PERSISTENT` | Use persistent storage | `false` |
 | `DELTALENS_EXPORT_SQLITE` | Export to SQLite | `true` |
-| `DELTALENS_LOG_LEVEL` | Logging level | `INFO` |
+| `DELTALENS_EXPORT_SAMPLING_THRESHOLD` | rowcount at which to start sampling | `10000` |
+| `DELTALENS_EXPORT_CSV` | export to gzipped csv | `true` |
+| `DELTALENS_EXPORT_MISMATCHES_ONLY` | Export mismatched rows only | `true` |
 
 ## Output Files
 
@@ -174,6 +149,17 @@ Resulting Tables include:
 - `[entity]_compare_field_summary`: Field-level match statistics
 
 ## Development
+
+### Docker
+
+```bash
+# Run with docker-compose
+docker-compose up
+
+# Run with custom arguments
+docker-compose run deltalens --run-name custom_run --log-level DEBUG
+```
+
 ### Generating Sample Data
 
 DeltaLens includes a script to generate sample trade data for testing and demonstration purposes.

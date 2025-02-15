@@ -13,8 +13,11 @@ The CLI can be configured through command-line arguments or environment variable
 - DELTALENS_PERSISTENT: Enable persistent storage
 - DELTALENS_CONTINUE_ON_ERROR: Continue processing on errors
 - DELTALENS_EXPORT_SQLITE: Export results to SQLite
-- DELTALENS_SQLITE_SAMPLE: Sample size for SQLite export
+- DELTALENS_EXPORT_SAMPLING_THRESHOLD: Sample size for  export
+- DELTALENS_EXPORT_CSV: export to csv archive
+- DELTALENS_EXPORT_MISMATCHES_ONLY: export only mismatched rows
 - DELTALENS_LOG_LEVEL: Logging level
+
 
 Example using command line:
     python cli.py --config compare.json --run-name my_comparison --output-dir ./results
@@ -25,6 +28,9 @@ Example using environment variables:
     export DELTALENS_OUTPUT_DIR=./results
     export DELTALENS_PERSISTENT=true
     export DELTALENS_EXPORT_SQLITE=true
+    export DELTALENS_EXPORT_CSV=true
+    export DELTALENS_EXPORT_SAMPLING_THRESHOLD=10000
+    export DELTALENS_EXPORT_MISMATCHES_ONLY=true
     python cli.py
 
 Dependencies:
@@ -45,6 +51,7 @@ from pathlib import Path
 from delta_lens.deltaLens import DeltaLens
 from delta_lens.config import load_config
 from delta_lens.sqliteExport import export_to_sqlite
+from delta_lens.csvExport import export_to_csv_archive
 import argparse
 
 def setup_logging(log_level: str = "INFO") -> None:
@@ -107,12 +114,26 @@ def parse_args():
         help='Export results to SQLite (env: DELTALENS_EXPORT_SQLITE)'
     )
     
+        # Export to SQLite
+    parser.add_argument(
+        '--export-csv',
+        action='store_true',
+        default=os.getenv('DELTALENS_EXPORT_CSV', 'true').lower() in ('true', '1', 'yes'),
+        help='Export results to CSV (gziped) (env: DELTALENS_EXPORT_CSV)'
+    )
+
+    parser.add_argument(
+        '--export-mismatches-only',
+        action='store_true',
+        default=os.getenv('DELTALENS_EXPORT_MISMATCHES_ONLY', 'true').lower() in ('true', '1', 'yes'),
+        help='Export mismatched rows only (env: DELTALENS_EXPORT_MISMATCHES_ONLY)'
+    )
     # SQLite sample threshold
     parser.add_argument(
-        '--sqlite-sample',
+        '--export-sampling-threshold',
         type=int,
-        default=int(os.getenv('DELTALENS_SQLITE_SAMPLE', '10000')),
-        help='Sample size for SQLite export (env: DELTALENS_SQLITE_SAMPLE)'
+        default=int(os.getenv('DELTALENS_EXPORT_SAMPLING_THRESHOLD', '10000')),
+        help='Sampling size for  export (env: DELTALENS_EXPORT_SAMPLING_THRESHOLD)'
     )
     
     # Log level
@@ -155,13 +176,26 @@ def main():
         
         # Export to SQLite if requested
         if args.export_sqlite:
+
             sqlite_path = output_dir / f"{args.run_name}.sqlite"
             logger.info(f"Exporting results to SQLite: {sqlite_path}")
             export_to_sqlite(
                 lens.con,
                 str(sqlite_path),
-                sample_threshold=args.sqlite_sample
+                sample_threshold=args.export_sampling_threshold,
+                mismatches_only=args.export_mismatches_only
             )
+
+         # Export to SQLite if requested
+        if args.export_csv:
+            tar_path = output_dir / f"{args.run_name}.tar.gz"
+            logger.info(f"Exporting results to CSV: {tar_path}")
+            export_to_csv_archive(
+                lens.con,
+                str(tar_path),
+                mismatches_only=args.export_mismatches_only
+            )
+        
         
         logger.info("Comparison completed successfully")
         

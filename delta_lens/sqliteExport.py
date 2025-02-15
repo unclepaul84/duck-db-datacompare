@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 import os
 
-def export_to_sqlite(conn, sqlite_db_path: str, sample_threshold = 10000, table_filter = None):  
+def export_to_sqlite(conn, sqlite_db_path: str, sample_threshold = 10000, table_filter = None, mismatches_only = True):  
     """
     Export tables from DuckDB to SQLite database with optional sampling.
     This function exports selected tables from a DuckDB connection to a SQLite database. It supports filtering
@@ -77,7 +77,11 @@ def export_to_sqlite(conn, sqlite_db_path: str, sample_threshold = 10000, table_
                     row_count = duck_con.execute(f"SELECT COUNT(*) FROM main.{table_name}").fetchone()[0]
                     if row_count > sample_threshold:
                         logger.info(f"sampling {sample_threshold} rows from {table_name}")
-                        duck_con.execute(f"CREATE TABLE sqlite_db.{table_name} AS SELECT * FROM main.{table_name} USING SAMPLE {sample_threshold};")
+
+                        if table_name.endswith("_compare") and mismatches_only:
+                            duck_con.execute(f"CREATE TABLE sqlite_db.{table_name} AS SELECT * FROM main.{table_name} WHERE _full_match=0  USING SAMPLE {sample_threshold};")
+                        else:
+                            duck_con.execute(f"CREATE TABLE sqlite_db.{table_name} AS SELECT * FROM main.{table_name} USING SAMPLE {sample_threshold};")
                     else:
                         duck_con.execute(plain_create_statement)
             
