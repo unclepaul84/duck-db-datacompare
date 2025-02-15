@@ -183,3 +183,4 @@ legacy_system_trades.csv
 new_system_trades.csv
 .tmp/
 results/
+*.duckdb
