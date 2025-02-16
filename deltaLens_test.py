@@ -37,7 +37,7 @@ def sample_config():
                     title="system_1",
                     inputFile="test_trades_2.csv",
                     transform=Transform(
-                        query="SELECT i.trade_id_system_2 as trade_id, trade_date, symbol , price , quantity,description  FROM trade_system_1 t INNER JOIN id_map i ON t.trade_id = i.trade_id_system_1",
+                        query="SELECT i.trade_id_system_2 as trade_id, trade_date, symbol , price , quantity, description  FROM trade_system_1 t INNER JOIN id_map i ON t.trade_id = i.trade_id_system_1",
                         cached=True
                     )
                 ),

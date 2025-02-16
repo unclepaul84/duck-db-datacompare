@@ -12,14 +12,14 @@ def sample_csv_files():
     """Create temporary test files with known data"""
     with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='_1.csv') as f1:
         writer = csv.writer(f1)
-        writer.writerow(['trade_id', 'timestamp', 'symbol', 'price', 'quantity'])
+        writer.writerow(['trade_id', 'timestamp', 'symbol', 'trade price', 'quantity'])
         writer.writerow(['1', '2024-01-01', 'AAPL', '150.0', '100'])
         writer.writerow(['2', '2024-01-01', 'GOOGL', '2500.0', '50'])
         file1 = f1.name
 
     with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='_2.csv') as f2:
         writer = csv.writer(f2)
-        writer.writerow(['trade_id', 'timestamp', 'symbol', 'price', 'quantity'])
+        writer.writerow(['trade_id', 'timestamp', 'symbol', 'trade price', 'quantity'])
         writer.writerow(['1', '2024-01-01', 'AAPL', '151.0', '100'])  # Price mismatch
         writer.writerow(['3', '2024-01-01', 'MSFT', '200.0', '75'])   # New record
         file2 = f2.name

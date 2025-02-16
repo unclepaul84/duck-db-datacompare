@@ -262,7 +262,7 @@ class EntityComparer:
         # Build join conditions for multiple primary keys
         join_conditions = []
         for pk in self.entity.primaryKeys:
-            join_conditions.append(f"{self.leftSideInputTable}.{pk} = {self.rightSideInputTable}.{pk}")
+            join_conditions.append(f'{self.leftSideInputTable}."{pk}" = {self.rightSideInputTable}."{pk}"')
         
         join_condition = " AND ".join(join_conditions)
         full_outer_join = f"FROM {self.leftSideInputTable} FULL OUTER JOIN {self.rightSideInputTable} ON {join_condition}"
@@ -278,7 +278,7 @@ class EntityComparer:
 
 
         for col in self.entity.primaryKeys:
-            column_expressions.append(f"coalesce({self.leftSideInputTable}.{col}, {self.rightSideInputTable}.{col}) as {col}")
+            column_expressions.append(f'coalesce({self.leftSideInputTable}."{col}", {self.rightSideInputTable}."{col}") as "{col}"')
 
         for col in comparison_columns:
             # Check if column exists in both tables
@@ -286,10 +286,10 @@ class EntityComparer:
             in_right = col in right_columns
             
             if in_left and in_right:
-                column_expressions.append(f"{self.leftSideInputTable}.{col} as {col}_left")
-                column_expressions.append(f"{self.rightSideInputTable}.{col} as {col}_right")
-                column_expressions.append(f"({self.leftSideInputTable}.{col} = {self.rightSideInputTable}.{col} OR ({self.leftSideInputTable}.{col} IS NULL AND {self.rightSideInputTable}.{col} IS NULL)) as {col}_match")
-                match_columns.append(f"{col}_match")
+                column_expressions.append(f'{self.leftSideInputTable}."{col}" as "{col}_left"')
+                column_expressions.append(f'{self.rightSideInputTable}."{col}" as "{col}_right"')
+                column_expressions.append(f'({self.leftSideInputTable}."{col}" = {self.rightSideInputTable}."{col}" OR ({self.leftSideInputTable}."{col}" IS NULL AND {self.rightSideInputTable}."{col}" IS NULL)) as "{col}_match"')
+                match_columns.append(f'"{col}_match"')
             else:
                 raise ValueError(f"Column '{col}' not found in both tables: left table= {self.leftSideInputTable}.found={in_left}, right table={self.rightSideInputTable}.found={in_right}")
         if self.entity.excludeColumns is not None:
@@ -298,18 +298,18 @@ class EntityComparer:
                 in_right = col in right_columns
 
                 if in_left:
-                    column_expressions.append(f"{self.leftSideInputTable}.{col} as {col}_left")
+                    column_expressions.append(f'{self.leftSideInputTable}."{col}" as "{col}_left"')
                 if in_right:
-                    column_expressions.append(f"{self.rightSideInputTable}.{col} as {col}_right")
+                    column_expressions.append(f'{self.rightSideInputTable}."{col}" as "{col}_right"')
 
 
-        exists_left_expression = [f"{self.leftSideInputTable}.{col}  IS NOT NULL " for col in self.entity.primaryKeys]
+        exists_left_expression = [f'{self.leftSideInputTable}."{col}"  IS NOT NULL ' for col in self.entity.primaryKeys]
         exists_left_expression = " AND ".join(exists_left_expression)
 
         column_expressions.append(f"({exists_left_expression}) as _exists_left")
 
 
-        exists_right_expression = [f"{self.rightSideInputTable}.{col}  IS NOT NULL " for col in self.entity.primaryKeys]
+        exists_right_expression = [f'{self.rightSideInputTable}."{col}"  IS NOT NULL ' for col in self.entity.primaryKeys]
         exists_right_expression = " AND ".join(exists_right_expression)
 
         column_expressions.append(f"({exists_right_expression}) as _exists_right")
@@ -318,7 +318,7 @@ class EntityComparer:
 
         compare_sql_statement = f"SELECT {select_clause} {full_outer_join}"
 
-        match_columns = [col + "=1" for col in match_columns]
+        match_columns = [ col  + "=1" for col in match_columns]
 
         match_columns_str = " AND ".join(match_columns)
 
@@ -388,20 +388,20 @@ class EntityComparer:
                 SELECT
                     COUNT(*) as total_count,
                     """ + \
-                    ",\n            ".join([f"SUM(CASE WHEN {col} THEN 1 ELSE 0 END) as {col[:-6]}_matches" for col in match_columns]) + \
+                    ",            ".join([f'SUM(CASE WHEN {col} THEN 1 ELSE 0 END) as {col[:-9]}_matches"' for col in match_columns]) + \
         """
                 FROM {entity}_compare WHERE _exists_left = 1 and _exists_right = 1 
             )
             SELECT
                 """ + \
                 " UNION ALL SELECT ".join([
-                    f"'{col[:-8]}' as field, total_count as total, {col[:-6]}_matches as matches, " + \
-                    f"ROUND(CAST({col[:-6]}_matches AS FLOAT) / total_count * 100, 2) as match_percentage FROM match_counts"
+                    f'\'{col[:-9][1:]}\' as field, total_count as total, {col[:-9]}_matches" as matches, ' + \
+                    f'ROUND(CAST({col[:-9]}_matches" AS FLOAT) / total_count * 100, 2) as match_percentage FROM match_counts'
                     for col in match_columns
                 ])
 
         summary_view_statement = f"CREATE VIEW {self.entity.entityName}_compare_field_summary AS {summary_query.format(entity=self.entity.entityName)}"
-
+        self.logger.info(summary_view_statement)
         self.con.execute(summary_view_statement)
         # if transform query is provided, execute it
 
