@@ -52,7 +52,7 @@ Install from PyPI:
 ```bash
 pip install delta-lens
 ```
-see data_compate.ipynb for example.
+see data_compare.ipynb for example.
 
 
 ## Basic Usage
@@ -90,7 +90,7 @@ docker run unclepaul84/deltalens:latest
 
 ## Using DeltaLens in Jupyter Notebooks
 
-DeltaLens can be used interactively in Jupyter notebooks for data comparison analysis. See data_compate.ipynb
+DeltaLens can be used interactively in Jupyter notebooks for data comparison analysis. See data_compare.ipynb
 
 
 ## Configuration
