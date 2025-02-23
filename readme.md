@@ -41,7 +41,7 @@ flowchart LR
     Exporter-->|export|Results_csv
     Sqlite@{ shape: lin-cyl, label: "results.sqlite" }
     Results_csv@{ shape: doc, label: "results.csv" }
-    classDef external fill:lightgray
+    classDef external fill:#F8F8F8
 
 ```
 
