@@ -13,9 +13,18 @@
 DeltaLens is a powerful tool for comparing large datasets using the power of [DuckDB](https://duckdb.org/) as the comparison engine. It supports data transformations, automated field-level matching, and detailed comparison reporting.
 
 ```mermaid
+
 flowchart LR
-    Trades_1@{ shape: doc, label: "new_system_trades.csv" }
-    Trades_2@{ shape: doc, label: "lagecy_system_trades.csv" }
+
+    Old_System:::external@{ shape: lin-cyl, label: "Old System" }
+    New_System:::external@{ shape: lin-cyl, label: "New System" }
+    Data_puller:::external@{ shape: subproc, label: "Data Puller" }
+    Old_System-->Data_puller
+    New_System-->Data_puller
+    Data_puller-->Trades_1
+    Data_puller-->Trades_2
+    Trades_1:::external@{ shape: doc, label: "new_system_trades.csv" }
+    Trades_2:::external@{ shape: doc, label: "lagecy_system_trades.csv" }
     Config@{ shape: doc, label: "config.json" }
     Config-->TableQueryGenerator
     Trades_2 -->|load|DuckDB
@@ -30,7 +39,7 @@ flowchart LR
     end
     Exporter-->|export|Sqlite
     Sqlite@{ shape: lin-cyl, label: "results.sqlite" }
-
+    classDef external fill:lightgray
 
 ```
 
