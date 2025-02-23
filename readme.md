@@ -18,7 +18,7 @@ flowchart LR
 
     Old_System:::external@{ shape: lin-cyl, label: "Old System" }
     New_System:::external@{ shape: lin-cyl, label: "New System" }
-    Data_puller:::external@{ shape: subproc, label: "Data Puller" }
+    Data_puller:::external@{ shape: subproc, label: "Data Exporter" }
     Old_System-->Data_puller
     New_System-->Data_puller
     Data_puller-->Trades_1
