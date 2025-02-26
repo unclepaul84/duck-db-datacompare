@@ -60,7 +60,7 @@ class DeltaLens:
             self.duck_db_fileName =f':memory:{clean_name}'
             
             
-        memory_gb = int(psutil.virtual_memory().total * 0.8 / (1024**3))
+        memory_gb = int(psutil.virtual_memory().total * 0.7 / (1024**3))
        
         self.logger.info(f'setting duckdb memory_limit to {memory_gb}GB')
         self.con = duckdb.connect(self.duck_db_fileName, config={'preserve_insertion_order': False, 'memory_limit': f'{memory_gb}GB'})
