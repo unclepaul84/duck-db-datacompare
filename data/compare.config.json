@@ -16,6 +16,38 @@
             },
             "primaryKeys": ["trade_id"]
         
-        }     
+        },{
+            "entityName":"trade1",
+            "leftSide": {
+                "title": "legacy",
+                "inputFile":"data/legacy_system_trades.csv"
+                
+                
+
+            },
+            "rightSide": {
+                "title": "new",
+                "inputFile":"data/new_system_trades.csv"
+            },
+            "primaryKeys": ["trade_id"]
+        
+        } ,
+        {
+            "entityName":"trade2",
+            "leftSide": {
+                "title": "legacy",
+                "inputFile":"data/legacy_system_trades.csv"
+                
+                
+
+            },
+            "rightSide": {
+                "title": "new",
+                "inputFile":"data/new_system_trades.csv"
+            },
+            "primaryKeys": ["trade_id"]
+        
+        }         
+            
     ]
 }
