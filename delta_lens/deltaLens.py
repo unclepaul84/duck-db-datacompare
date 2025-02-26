@@ -6,6 +6,7 @@ import os
 import duckdb
 import pandas as pd
 import glob
+import psutil
 
 
 class DeltaLens:
@@ -57,9 +58,12 @@ class DeltaLens:
             self.duck_db_fileName =f'{os.path.join(persist_path, (clean_name +  ".duckdb"))}'
         else:
             self.duck_db_fileName =f':memory:{clean_name}'
-
-        #TODO: set memory limits to % of total avail
-        self.con = duckdb.connect(self.duck_db_fileName, config={'preserve_insertion_order': False, 'memory_limit': '2GB'})
+            
+            
+        memory_gb = int(psutil.virtual_memory().total * 0.8 / (1024**3))
+       
+        self.logger.info(f'setting duckdb memory_limit to {memory_gb}GB')
+        self.con = duckdb.connect(self.duck_db_fileName, config={'preserve_insertion_order': False, 'memory_limit': f'{memory_gb}GB'})
 
         self.logger.info(f"Connected to DuckDB database @: {self.duck_db_fileName}")
       
