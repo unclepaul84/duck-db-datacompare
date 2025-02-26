@@ -59,7 +59,7 @@ class DeltaLens:
             self.duck_db_fileName =f':memory:{clean_name}'
 
         #TODO: set memory limits to % of total avail
-        self.con = duckdb.connect(self.duck_db_fileName, config={'preserve_insertion_order': False})
+        self.con = duckdb.connect(self.duck_db_fileName, config={'preserve_insertion_order': False, 'memory_limit': '2GB'})
 
         self.logger.info(f"Connected to DuckDB database @: {self.duck_db_fileName}")
       
